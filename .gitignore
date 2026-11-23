@@ -1,0 +1,12 @@
+# Logs e arquivos do sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Node (se for utilizado no futuro)
+node_modules/

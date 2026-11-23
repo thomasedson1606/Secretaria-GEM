@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle SAM - Conferência Musical CCB</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- SheetJS para exportação Excel (.xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef9fa',
+                            100: '#d5f0f3',
+                            200: '#b0e1e7',
+                            300: '#7acbd5',
+                            400: '#3dacbc',
+                            500: '#2190a1',
+                            600: '#02727e', // Cor Primária Solicitada
+                            700: '#045d68',
+                            800: '#094d57',
+                            900: '#0d414a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos customizados para transições suaves e impressão */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Estilo de impressão limpo */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: white !important;
+            }
+            .print-shadow-none {
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+            }
+        }
+
+        /* Animação para Toast/Notificações */
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-enter {
+            animation: slideUp 0.25s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Navbar Superior -->
+    <header class="bg-brand-600 text-white shadow-md sticky top-0 z-30 no-print">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 sm:py-0 sm:h-16 gap-3">
+                <!-- Logo / Título -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-white/15 p-2 rounded-xl backdrop-blur-sm">
+                            <!-- Ícone Clave de Sol / Música -->
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold tracking-tight leading-tight">Controle SAM</h1>
+                            <p class="text-xs text-brand-100 font-medium">Administração Musical • Conferência Semanal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Abas de Navegação Principal -->
+                <nav class="flex space-x-1 bg-brand-700/60 p-1 rounded-xl self-stretch sm:self-center">
+                    <button id="tab-btn-conferencia" onclick="switchMainTab('conferencia')" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-brand-700 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        </svg>
+                        <span>Conferência Semanal</span>
+                    </button>
+                    <button id="tab-btn-configuracao" onclick="switchMainTab('configuracao')" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-brand-100 hover:text-white hover:bg-white/10">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span>Configuração</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+        <!-- ===================================================================== -->
+        <!-- TELA 1: CONFERÊNCIA SEMANAL (TELA PRINCIPAL)                          -->
+        <!-- ===================================================================== -->
+        <section id="view-conferencia" class="space-y-6">
+            
+            <!-- Cartão 1: Seleção de Período de Análise e Progresso Geral -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 print-shadow-none">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <!-- Seletor de Período -->
+                    <div class="lg:col-span-6 space-y-2">
+                        <label for="select-periodo" class="block text-xs font-bold uppercase tracking-wider text-brand-700">
+                            1. Período de Análise (Data Semanal)
+                        </label>
+                        <div class="relative">
+                            <select id="select-periodo" onchange="onPeriodoChange()" class="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-800 text-base font-semibold rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors cursor-pointer">
+                                <!-- Preenchido via JS -->
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p id="periodo-info-desc" class="text-xs text-slate-500 pl-1">Selecione a semana de referência cadastrada nas configurações.</p>
+                    </div>
+
+                    <!-- Indicador Visual de Progresso da Semana -->
+                    <div class="lg:col-span-6 bg-slate-50 rounded-xl p-4 border border-slate-200/70">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Progresso da Semana</span>
+                            <span id="progresso-texto" class="text-sm font-bold text-brand-700">0 de 0 Comuns conferidas (100% OK)</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                            <div id="progresso-barra" class="bg-brand-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div class="flex items-center justify-between mt-2 text-xs text-slate-500">
+                            <span id="progresso-parcial">0 com pendências parciais</span>
+                            <span id="progresso-pendente">0 aguardando conferência</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cartão 2: Seleção de Comum Congregação e Flags de OK -->
+            <div id="card-formulario-conferencia" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 no-print">
+                <div class="border-b border-slate-100 pb-4 mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-brand-700">2. Lançamento da Conferência</span>
+                        <h2 class="text-lg font-bold text-slate-800">Conferência por Comum Congregação</h2>
+                    </div>
+                    <div id="badge-status-atual" class="self-start sm:self-center">
+                        <!-- Badge dinâmico -->
+                    </div>
+                </div>
+
+                <!-- Seleção da Comum Congregação e Secretário Conferente -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                    <!-- Select Comum -->
+                    <div class="space-y-1.5">
+                        <label for="select-comum" class="block text-sm font-semibold text-slate-700">
+                            Comum Congregação
+                        </label>
+                        <div class="relative">
+                            <select id="select-comum" onchange="onComumChange()" class="w-full appearance-none bg-white border border-slate-300 text-slate-800 text-base font-medium rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors cursor-pointer">
+                                <!-- Preenchido via JS -->
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-xs text-slate-600 bg-brand-50/80 text-brand-800 px-3 py-1.5 rounded-lg border border-brand-100">
+                            <svg class="w-4 h-4 text-brand-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <span>Secretário do GEM responsável: <strong id="display-sec-gem">---</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Select Secretário Conferente -->
+                    <div class="space-y-1.5">
+                        <label for="select-conferente" class="block text-sm font-semibold text-slate-700">
+                            Secretário Conferente (Quem está analisando)
+                        </label>
+                        <div class="relative">
+                            <select id="select-conferente" onchange="autoSaveConferencia()" class="w-full appearance-none bg-white border border-slate-300 text-slate-800 text-base font-medium rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors cursor-pointer">
+                                <!-- Preenchido via JS -->
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between text-xs text-slate-500 px-1 pt-0.5">
+                            <span id="display-ultima-atualizacao">Ainda não conferido neste período</span>
+                            <button type="button" onclick="marcarTodosFlags(true)" class="text-brand-600 hover:text-brand-800 font-semibold underline">
+                                Marcar todos como OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid dos 4 Flags de OK -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-3">
+                        Itens de Conferência no SAM (Toque para alternar entre Pendente e OK):
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        
+                        <!-- Flag 1: Cadastro de Membros -->
+                        <button type="button" id="btn-flag-membros" onclick="toggleFlag('membros')" class="group text-left p-4 rounded-xl border-2 transition-all duration-200 flex flex-col justify-between min-h-[112px] border-slate-200 bg-slate-50/60 hover:border-slate-300">
+                            <div class="flex items-center justify-between w-full mb-2">
+                                <span class="p-2 rounded-lg bg-white shadow-sm text-slate-500 group-hover:text-brand-600 transition-colors" id="icon-flag-membros">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                </span>
+                                <span id="pill-flag-membros" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-600">
+                                    PENDENTE
+                                </span>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">Cadastro de Membros</div>
+                                <div class="text-xs text-slate-500 mt-0.5">Músicos, organistas e instrutores</div>
+                            </div>
+                        </button>
+
+                        <!-- Flag 2: Cadastro de Alunos -->
+                        <button type="button" id="btn-flag-alunos" onclick="toggleFlag('alunos')" class="group text-left p-4 rounded-xl border-2 transition-all duration-200 flex flex-col justify-between min-h-[112px] border-slate-200 bg-slate-50/60 hover:border-slate-300">
+                            <div class="flex items-center justify-between w-full mb-2">
+                                <span class="p-2 rounded-lg bg-white shadow-sm text-slate-500 group-hover:text-brand-600 transition-colors" id="icon-flag-alunos">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+                                    </svg>
+                                </span>
+                                <span id="pill-flag-alunos" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-600">
+                                    PENDENTE
+                                </span>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">Cadastro de Alunos</div>
+                                <div class="text-xs text-slate-500 mt-0.5">Candidatos ativos no GEM</div>
+                            </div>
+                        </button>
+
+                        <!-- Flag 3: Cadastro de Turmas -->
+                        <button type="button" id="btn-flag-turmas" onclick="toggleFlag('turmas')" class="group text-left p-4 rounded-xl border-2 transition-all duration-200 flex flex-col justify-between min-h-[112px] border-slate-200 bg-slate-50/60 hover:border-slate-300">
+                            <div class="flex items-center justify-between w-full mb-2">
+                                <span class="p-2 rounded-lg bg-white shadow-sm text-slate-500 group-hover:text-brand-600 transition-colors" id="icon-flag-turmas">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                    </svg>
+                                </span>
+                                <span id="pill-flag-turmas" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-600">
+                                    PENDENTE
+                                </span>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">Cadastro de Turmas</div>
+                                <div class="text-xs text-slate-500 mt-0.5">Organização de grupos e métodos</div>
+                            </div>
+                        </button>
+
+                        <!-- Flag 4: Cadastro de Aula da Semana -->
+                        <button type="button" id="btn-flag-aula" onclick="toggleFlag('aula')" class="group text-left p-4 rounded-xl border-2 transition-all duration-200 flex flex-col justify-between min-h-[112px] border-slate-200 bg-slate-50/60 hover:border-slate-300">
+                            <div class="flex items-center justify-between w-full mb-2">
+                                <span class="p-2 rounded-lg bg-white shadow-sm text-slate-500 group-hover:text-brand-600 transition-colors" id="icon-flag-aula">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </span>
+                                <span id="pill-flag-aula" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-600">
+                                    PENDENTE
+                                </span>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">Cadastro de Aula da Semana</div>
+                                <div class="text-xs text-slate-500 mt-0.5">Frequência e lições lançadas</div>
+                            </div>
+                        </button>
+
+                    </div>
+                </div>
+
+                <!-- Observações e Botão Salvar -->
+                <div class="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end pt-2 border-t border-slate-100">
+                    <div class="flex-grow space-y-1">
+                        <label for="input-observacoes" class="block text-xs font-semibold text-slate-600">
+                            Observações / Pendências identificadas (Opcional)
+                        </label>
+                        <input type="text" id="input-observacoes" onchange="autoSaveConferencia()" placeholder="Ex: Falta lançar presença da turma de quinta-feira..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors">
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                        <button type="button" onclick="limparConferenciaAtual()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 text-sm font-semibold transition-colors">
+                            Limpar
+                        </button>
+                        <button type="button" onclick="salvarConferenciaManual()" class="flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-all active:scale-[0.98]">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Salvar Conferência</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cartão 3: Resumo Visual da Semana (Tabela/Cards de Todas as Comuns) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden print-shadow-none">
+                <div class="p-5 sm:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Painel Geral da Semana</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Acompanhamento consolidado de todas as Comuns Congregações neste período</p>
+                    </div>
+
+                    <!-- Botões de Ação / Exportação -->
+                    <div class="flex flex-wrap items-center gap-2 no-print">
+                        <button type="button" onclick="copiarResumoWhatsApp()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition-colors">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
+                            </svg>
+                            <span>Copiar p/ WhatsApp</span>
+                        </button>
+                        <button type="button" onclick="exportarExcelSemana()" class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl border border-slate-200 transition-colors">
+                            <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Excel (.xlsx)</span>
+                        </button>
+                        <button type="button" onclick="window.print()" class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl border border-slate-200 transition-colors">
+                            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                            </svg>
+                            <span>Imprimir</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabela Responsiva (Desktop) -->
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                <th class="py-3.5 px-5">Comum Congregação</th>
+                                <th class="py-3.5 px-3 text-center">Membros</th>
+                                <th class="py-3.5 px-3 text-center">Alunos</th>
+                                <th class="py-3.5 px-3 text-center">Turmas</th>
+                                <th class="py-3.5 px-3 text-center">Aula Semanal</th>
+                                <th class="py-3.5 px-4">Conferente / Obs.</th>
+                                <th class="py-3.5 px-5 text-right no-print">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-resumo-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Lista em Cards (Mobile) -->
+                <div id="cards-resumo-mobile" class="md:hidden divide-y divide-slate-100">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ===================================================================== -->
+        <!-- TELA 2: CONFIGURAÇÃO (CADASTROS E BACKUP)                             -->
+        <!-- ===================================================================== -->
+        <section id="view-configuracao" class="hidden space-y-6">
+            
+            <!-- Cabeçalho da Configuração + Sub-navegação rápida -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Configurações do Sistema</h2>
+                        <p class="text-sm text-slate-500">Gerencie as Comuns Congregações, Secretários Conferentes e Datas de Análise.</p>
+                    </div>
+                </div>
+
+                <!-- Botões de Seleção de Sub-aba de Configuração -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button type="button" id="subtab-btn-comuns" onclick="switchConfigSubtab('comuns')" class="flex items-center gap-3 p-3.5 rounded-xl border-2 border-brand-600 bg-brand-50/70 text-brand-800 font-semibold text-left transition-all">
+                        <div class="p-2 rounded-lg bg-brand-600 text-white shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold">Comum Congregação</div>
+                            <div id="count-badge-comuns" class="text-xs text-brand-600 font-medium">0 cadastradas</div>
+                        </div>
+                    </button>
+
+                    <button type="button" id="subtab-btn-secretarios" onclick="switchConfigSubtab('secretarios')" class="flex items-center gap-3 p-3.5 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 text-slate-700 font-semibold text-left transition-all">
+                        <div class="p-2 rounded-lg bg-slate-100 text-slate-600 shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold">Cadastro de Secretário</div>
+                            <div id="count-badge-secretarios" class="text-xs text-slate-500 font-medium">0 cadastrados</div>
+                        </div>
+                    </button>
+
+                    <button type="button" id="subtab-btn-datas" onclick="switchConfigSubtab('datas')" class="flex items-center gap-3 p-3.5 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 text-slate-700 font-semibold text-left transition-all">
+                        <div class="p-2 rounded-lg bg-slate-100 text-slate-600 shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold">Datas de Análise</div>
+                            <div id="count-badge-datas" class="text-xs text-slate-500 font-medium">0 períodos</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUB-TELA A: CADASTRO DE COMUM CONGREGAÇÃO -->
+            <div id="config-panel-comuns" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">Cadastro de Comum Congregação</h3>
+                    <p class="text-xs text-slate-500">Informe o nome da localidade e o Secretário do GEM responsável pelos lançamentos nela.</p>
+                </div>
+
+                <form id="form-comum" onsubmit="salvarComum(event)" class="grid grid-cols-1 md:grid-cols-12 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                    <input type="hidden" id="edit-comum-id" value="">
+                    <div class="md:col-span-5">
+                        <label for="input-comum-nome" class="block text-xs font-bold text-slate-700 mb-1">Nome da Comum Congregação *</label>
+                        <input type="text" id="input-comum-nome" required placeholder="Ex: Central, Vila Nova, Jardim América..." class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label for="input-comum-sec-gem" class="block text-xs font-bold text-slate-700 mb-1">Secretário do GEM Responsável *</label>
+                        <input type="text" id="input-comum-sec-gem" required placeholder="Ex: Ir. João Silva" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="md:col-span-3 flex items-end gap-2">
+                        <button type="submit" id="btn-submit-comum" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm shadow-sm transition-colors">
+                            Adicionar Comum
+                        </button>
+                        <button type="button" id="btn-cancel-comum" onclick="cancelarEdicaoComum()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-3 rounded-xl text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Lista de Comuns -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
+                                <th class="py-3 px-4">Comum Congregação</th>
+                                <th class="py-3 px-4">Secretário do GEM Responsável</th>
+                                <th class="py-3 px-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-comuns-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SUB-TELA B: CADASTRO DE SECRETÁRIO (CONFERENTE) -->
+            <div id="config-panel-secretarios" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">Cadastro de Secretário (Conferente)</h3>
+                    <p class="text-xs text-slate-500">Cadastre os nomes dos irmãos que realizam a conferência semanal no sistema.</p>
+                </div>
+
+                <form id="form-secretario" onsubmit="salvarSecretario(event)" class="grid grid-cols-1 md:grid-cols-12 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                    <input type="hidden" id="edit-sec-id" value="">
+                    <div class="md:col-span-8">
+                        <label for="input-sec-nome" class="block text-xs font-bold text-slate-700 mb-1">Nome do Secretário Conferente *</label>
+                        <input type="text" id="input-sec-nome" required placeholder="Ex: Ir. Carlos Eduardo (Secretário Regional)" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="md:col-span-4 flex items-end gap-2">
+                        <button type="submit" id="btn-submit-sec" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm shadow-sm transition-colors">
+                            Adicionar Secretário
+                        </button>
+                        <button type="button" id="btn-cancel-sec" onclick="cancelarEdicaoSecretario()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-3 rounded-xl text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Lista de Secretários -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
+                                <th class="py-3 px-4">Nome do Secretário</th>
+                                <th class="py-3 px-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-secretarios-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SUB-TELA C: CADASTRO DE DATAS DE ANÁLISE (SEMANAL) -->
+            <div id="config-panel-datas" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">Datas de Análise (Períodos Semanais)</h3>
+                    <p class="text-xs text-slate-500">Adicione as datas semanais em que as conferências serão realizadas. Elas aparecerão no seletor "Período de Análise".</p>
+                </div>
+
+                <form id="form-data" onsubmit="salvarDataAnalise(event)" class="grid grid-cols-1 md:grid-cols-12 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                    <div class="md:col-span-4">
+                        <label for="input-data-valor" class="block text-xs font-bold text-slate-700 mb-1">Data da Análise Semanal *</label>
+                        <input type="date" id="input-data-valor" required class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="md:col-span-5">
+                        <label for="input-data-desc" class="block text-xs font-bold text-slate-700 mb-1">Descrição / Referência (Opcional)</label>
+                        <input type="text" id="input-data-desc" placeholder="Ex: 4ª Semana de Novembro / Fechamento Mensal" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="md:col-span-3 flex items-end">
+                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm shadow-sm transition-colors">
+                            Adicionar Data
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Lista de Datas -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-xs font-bold uppercase text-slate-500">
+                                <th class="py-3 px-4">Data</th>
+                                <th class="py-3 px-4">Descrição / Referência</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-datas-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SEÇÃO DE BACKUP, EXPORTAÇÃO GERAL E DADOS DE EXEMPLO -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
+                <h3 class="text-base font-bold text-slate-800 mb-1">Backup e Gerenciamento de Dados</h3>
+                <p class="text-xs text-slate-500 mb-4">Seus dados ficam salvos automaticamente neste navegador. Utilize as opções abaixo para transferir ou fazer cópia de segurança.</p>
+                
+                <div class="flex flex-wrap gap-3">
+                    <button type="button" onclick="exportarBackupJSON()" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        <span>Exportar Backup (.json)</span>
+                    </button>
+
+                    <label class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl border border-slate-300 cursor-pointer transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                        <span>Importar Backup (.json)</span>
+                        <input type="file" id="input-import-json" accept=".json" onchange="importarBackupJSON(event)" class="hidden">
+                    </label>
+
+                    <button type="button" onclick="exportarRelatorioGeralExcel()" class="inline-flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl border border-emerald-200 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Relatório Histórico Completo (.xlsx)</span>
+                    </button>
+
+                    <button type="button" onclick="pedirConfirmacaoReset()" class="inline-flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl border border-rose-200 transition-colors ml-auto">
+                        <span>Restaurar Dados de Exemplo</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-8 no-print">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+            <span>Controle de Lançamentos SAM • Administração Musical</span>
+            <span>Armazenamento local automático ativo</span>
+        </div>
+    </footer>
+
+    <!-- Modal de Confirmação Customizado (Substitui window.confirm) -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <h3 id="modal-title" class="text-lg font-bold text-slate-800">Confirmar ação</h3>
+            <p id="modal-message" class="text-sm text-slate-600">Tem certeza que deseja prosseguir?</p>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="fecharModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">
+                    Cancelar
+                </button>
+                <button type="button" id="modal-confirm-btn" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold shadow-sm">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ===================================================================== -->
+    <!-- LÓGICA JAVASCRIPT DA APLICAÇÃO                                        -->
+    <!-- ===================================================================== -->
+    <script>
+        // Chave única do localStorage
+        const STORAGE_KEY = 'ccb_sam_conferencia_v1';
+
+        // Estado Global da Aplicação
+        let appState = {
+            comuns: [],       // [{ id, nome, secretarioGem }]
+            secretarios: [],  // [{ id, nome }]
+            datas: [],        // [{ id, dataISO, descricao, ativa }]
+            conferencias: {}, // Chave: `${dataId}_${comumId}` -> { membros, alunos, turmas, aula, conferenteId, obs, updatedAt }
+            selectedPeriodoId: '',
+            selectedComumId: ''
+        };
+
+        // Dados iniciais de exemplo para facilitar o primeiro uso
+        function getDefaultSeedData() {
+            return {
+                comuns: [
+                    { id: 'c1', nome: 'Central', secretarioGem: 'Ir. Marcos Oliveira' },
+                    { id: 'c2', nome: 'Vila Nova', secretarioGem: 'Ir. Lucas Almeida' },
+                    { id: 'c3', nome: 'Jardim das Oliveiras', secretarioGem: 'Ir. Rafael Santos' },
+                    { id: 'c4', nome: 'Parque Industrial', secretarioGem: 'Ir. Daniel Costa' }
+                ],
+                secretarios: [
+                    { id: 's1', nome: 'Ir. Carlos Eduardo (Sec. Regional)' },
+                    { id: 's2', nome: 'Ir. André Luiz (Auxiliar)' }
+                ],
+                datas: [
+                    { id: 'd1', dataISO: '2026-11-16', descricao: 'Semana anterior (16/11)', ativa: false },
+                    { id: 'd2', dataISO: '2026-11-23', descricao: 'Semana atual (23/11)', ativa: true }
+                ],
+                conferencias: {
+                    'd2_c1': {
+                        membros: true,
+                        alunos: true,
+                        turmas: true,
+                        aula: true,
+                        conferenteId: 's1',
+                        obs: 'Tudo em ordem no SAM.',
+                        updatedAt: '23/11/2026 08:30'
+                    },
+                    'd2_c2': {
+                        membros: true,
+                        alunos: true,
+                        turmas: true,
+                        aula: false,
+                        conferenteId: 's1',
+                        obs: 'Aguardando lançamento da aula de sábado.',
+                        updatedAt: '23/11/2026 09:10'
+                    }
+                },
+                selectedPeriodoId: 'd2',
+                selectedComumId: 'c1'
+            };
+        }
+
+        // Inicialização ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarDadosStorage();
+            // Define data de hoje como padrão no campo de nova data
+            const inputData = document.getElementById('input-data-valor');
+            if (inputData) {
+                inputData.value = new Date().toISOString().split('T')[0];
+            }
+            renderizarTudo();
+        });
+
+        // Carrega dados do localStorage ou popula dados iniciais
+        function carregarDadosStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    appState = { ...getDefaultSeedData(), ...parsed };
+                } else {
+                    appState = getDefaultSeedData();
+                    salvarDadosStorage();
+                }
+            } catch (e) {
+                console.error('Erro ao ler localStorage:', e);
+                appState = getDefaultSeedData();
+            }
+            validarSelecoesAtivas();
+        }
+
+        // Salva estado no localStorage
+        function salvarDadosStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                showToast('Erro ao salvar dados localmente.', 'error');
+            }
+        }
+
+        // Garante que sempre haja um período e uma comum válidos selecionados
+        function validarSelecoesAtivas() {
+            if (appState.datas.length > 0) {
+                const existePeriodo = appState.datas.some(d => d.id === appState.selectedPeriodoId);
+                if (!existePeriodo) {
+                    const ativa = appState.datas.find(d => d.ativa) || appState.datas[appState.datas.length - 1];
+                    appState.selectedPeriodoId = ativa.id;
+                }
+            } else {
+                appState.selectedPeriodoId = '';
+            }
+
+            if (appState.comuns.length > 0) {
+                const existeComum = appState.comuns.some(c => c.id === appState.selectedComumId);
+                if (!existeComum) {
+                    appState.selectedComumId = appState.comuns[0].id;
+                }
+            } else {
+                appState.selectedComumId = '';
+            }
+        }
+
+        // Formata data YYYY-MM-DD para DD/MM/YYYY
+        function formatarDataBR(dataISO) {
+            if (!dataISO) return '';
+            const partes = dataISO.split('-');
+            if (partes.length !== 3) return dataISO;
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        // Gera ID único simples
+        function gerarId(prefixo = 'id') {
+            return `${prefixo}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        }
+
+        // =====================================================================
+        // NAVEGAÇÃO ENTRE ABAS E SUB-ABAS
+        // =====================================================================
+        function switchMainTab(tabName) {
+            const viewConf = document.getElementById('view-conferencia');
+            const viewConfig = document.getElementById('view-configuracao');
+            const btnConf = document.getElementById('tab-btn-conferencia');
+            const btnConfig = document.getElementById('tab-btn-configuracao');
+
+            if (tabName === 'conferencia') {
+                viewConf.classList.remove('hidden');
+                viewConfig.classList.add('hidden');
+                
+                btnConf.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-brand-700 shadow-sm';
+                btnConfig.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-brand-100 hover:text-white hover:bg-white/10';
+                
+                renderizarTelaConferencia();
+            } else {
+                viewConf.classList.add('hidden');
+                viewConfig.classList.remove('hidden');
+                
+                btnConfig.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-brand-700 shadow-sm';
+                btnConf.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-brand-100 hover:text-white hover:bg-white/10';
+                
+                renderizarTelaConfiguracao();
+            }
+        }
+
+        function switchConfigSubtab(subtab) {
+            const panels = ['comuns', 'secretarios', 'datas'];
+            panels.forEach(p => {
+                const panelEl = document.getElementById(`config-panel-${p}`);
+                const btnEl = document.getElementById(`subtab-btn-${p}`);
+                const iconBox = btnEl.querySelector('div:first-child');
+                const subText = btnEl.querySelector('div:last-child div:last-child');
+
+                if (p === subtab) {
+                    panelEl.classList.remove('hidden');
+                    btnEl.className = 'flex items-center gap-3 p-3.5 rounded-xl border-2 border-brand-600 bg-brand-50/70 text-brand-800 font-semibold text-left transition-all';
+                    iconBox.className = 'p-2 rounded-lg bg-brand-600 text-white shrink-0';
+                    subText.className = 'text-xs text-brand-600 font-medium';
+                } else {
+                    panelEl.classList.add('hidden');
+                    btnEl.className = 'flex items-center gap-3 p-3.5 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 text-slate-700 font-semibold text-left transition-all';
+                    iconBox.className = 'p-2 rounded-lg bg-slate-100 text-slate-600 shrink-0';
+                    subText.className = 'text-xs text-slate-500 font-medium';
+                }
+            });
+        }
+
+        // =====================================================================
+        // RENDERIZAÇÃO GERAL
+        // =====================================================================
+        function renderizarTudo() {
+            validarSelecoesAtivas();
+            renderizarTelaConferencia();
+            renderizarTelaConfiguracao();
+        }
+
+        // =====================================================================
+        // TELA PRINCIPAL: CONFERÊNCIA SEMANAL
+        // =====================================================================
+        function renderizarTelaConferencia() {
+            // 1. Preencher Select de Períodos
+            const selectPeriodo = document.getElementById('select-periodo');
+            const datasOrdenadas = [...appState.datas].sort((a, b) => b.dataISO.localeCompare(a.dataISO));
+            
+            if (datasOrdenadas.length === 0) {
+                selectPeriodo.innerHTML = '<option value="">Nenhuma data cadastrada (Vá em Configuração)</option>';
+                document.getElementById('periodo-info-desc').textContent = 'Cadastre uma data na aba Configuração para iniciar.';
+            } else {
+                selectPeriodo.innerHTML = datasOrdenadas.map(d => {
+                    const label = `Semana de ${formatarDataBR(d.dataISO)}${d.descricao ? ' — ' + d.descricao : ''}`;
+                    return `<option value="${d.id}" ${d.id === appState.selectedPeriodoId ? 'selected' : ''}>${label}</option>`;
+                }).join('');
+                
+                const periodoAtual = datasOrdenadas.find(d => d.id === appState.selectedPeriodoId);
+                document.getElementById('periodo-info-desc').textContent = periodoAtual && periodoAtual.descricao 
+                    ? `Referência: ${periodoAtual.descricao}` 
+                    : 'Período semanal selecionado para auditoria.';
+            }
+
+            // 2. Preencher Select de Comum Congregação
+            const selectComum = document.getElementById('select-comum');
+            if (appState.comuns.length === 0) {
+                selectComum.innerHTML = '<option value="">Nenhuma Comum cadastrada (Vá em Configuração)</option>';
+            } else {
+                selectComum.innerHTML = appState.comuns.map(c => {
+                    const reg = getRegistroConferencia(appState.selectedPeriodoId, c.id);
+                    const totalOk = [reg.membros, reg.alunos, reg.turmas, reg.aula].filter(Boolean).length;
+                    const indicador = totalOk === 4 ? '✅' : (totalOk > 0 ? '⚠️' : '⏳');
+                    return `<option value="${c.id}" ${c.id === appState.selectedComumId ? 'selected' : ''}>${indicador} ${c.nome}</option>`;
+                }).join('');
+            }
+
+            // 3. Preencher Select de Secretário Conferente
+            const selectConferente = document.getElementById('select-conferente');
+            if (appState.secretarios.length === 0) {
+                selectConferente.innerHTML = '<option value="">Cadastre um Secretário na Configuração</option>';
+            } else {
+                selectConferente.innerHTML = '<option value="">Selecione quem está conferindo...</option>' + 
+                    appState.secretarios.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+            }
+
+            // 4. Carregar dados do formulário para o par (Período + Comum)
+            carregarFormularioAtual();
+
+            // 5. Atualizar Barra de Progresso e Tabela/Cards da Semana
+            renderizarProgressoEPainelSemanal();
+        }
+
+        function getRegistroConferencia(periodoId, comumId) {
+            const key = `${periodoId}_${comumId}`;
+            return appState.conferencias[key] || {
+                membros: false,
+                alunos: false,
+                turmas: false,
+                aula: false,
+                conferenteId: appState.secretarios[0]?.id || '',
+                obs: '',
+                updatedAt: null
+            };
+        }
+
+        function carregarFormularioAtual() {
+            const comum = appState.comuns.find(c => c.id === appState.selectedComumId);
+            document.getElementById('display-sec-gem').textContent = comum ? comum.secretarioGem : '---';
+
+            if (!appState.selectedPeriodoId || !appState.selectedComumId) {
+                atualizarVisualFlags({ membros: false, alunos: false, turmas: false, aula: false });
+                return;
+            }
+
+            const reg = getRegistroConferencia(appState.selectedPeriodoId, appState.selectedComumId);
+            
+            // Seleciona conferente salvo ou padrão
+            const selectConf = document.getElementById('select-conferente');
+            if (reg.conferenteId && appState.secretarios.some(s => s.id === reg.conferenteId)) {
+                selectConf.value = reg.conferenteId;
+            } else if (appState.secretarios.length > 0) {
+                selectConf.value = appState.secretarios[0].id;
+            }
+
+            document.getElementById('input-observacoes').value = reg.obs || '';
+            
+            const displayAtualizacao = document.getElementById('display-ultima-atualizacao');
+            if (reg.updatedAt) {
+                displayAtualizacao.innerHTML = `<span class="text-emerald-700 font-medium">Salvo em: ${reg.updatedAt}</span>`;
+            } else {
+                displayAtualizacao.textContent = 'Ainda não conferido neste período';
+            }
+
+            atualizarVisualFlags(reg);
+        }
+
+        function atualizarVisualFlags(reg) {
+            const itens = [
+                { key: 'membros', active: reg.membros },
+                { key: 'alunos', active: reg.alunos },
+                { key: 'turmas', active: reg.turmas },
+                { key: 'aula', active: reg.aula }
+            ];
+
+            let countOk = 0;
+
+            itens.forEach(item => {
+                const btn = document.getElementById(`btn-flag-${item.key}`);
+                const pill = document.getElementById(`pill-flag-${item.key}`);
+                const icon = document.getElementById(`icon-flag-${item.key}`);
+
+                if (item.active) {
+                    countOk++;
+                    btn.className = 'group text-left p-4 rounded-xl border-2 transition-all duration-200 flex flex-col justify-between min-h-[112px] border-emerald-500 bg-emerald-50/60 shadow-xs';
+                    pill.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white flex items-center gap-1';
+                    pill.innerHTML = '<span>✓ OK</span>';
+                    icon.className = 'p-2 rounded-lg bg-emerald-600 text-white shadow-xs transition-colors';
+                } else {
+                    btn.className = 'group text-left p-4 rounded-xl border-2 transition-all duration-200 flex flex-col justify-between min-h-[112px] border-slate-200 bg-slate-50/60 hover:border-slate-300';
+                    pill.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-600';
+                    pill.textContent = 'PENDENTE';
+                    icon.className = 'p-2 rounded-lg bg-white shadow-xs text-slate-500 group-hover:text-brand-600 transition-colors';
+                }
+            });
+
+            // Badge superior de status da comum atual
+            const badgeStatus = document.getElementById('badge-status-atual');
+            if (countOk === 4) {
+                badgeStatus.innerHTML = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">✓ Conferência 100% Concluída</span>';
+            } else if (countOk > 0) {
+                badgeStatus.innerHTML = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">⚠️ Parcial (${countOk}/4 itens OK)</span>`;
+            } else {
+                badgeStatus.innerHTML = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">⏳ Aguardando Conferência</span>';
+            }
+        }
+
+        function onPeriodoChange() {
+            appState.selectedPeriodoId = document.getElementById('select-periodo').value;
+            salvarDadosStorage();
+            renderizarTelaConferencia();
+        }
+
+        function onComumChange() {
+            appState.selectedComumId = document.getElementById('select-comum').value;
+            salvarDadosStorage();
+            carregarFormularioAtual();
+        }
+
+        function toggleFlag(flagKey) {
+            if (!appState.selectedPeriodoId || !appState.selectedComumId) {
+                showToast('Cadastre e selecione um Período e uma Comum primeiro.', 'error');
+                return;
+            }
+            const reg = getRegistroConferencia(appState.selectedPeriodoId, appState.selectedComumId);
+            reg[flagKey] = !reg[flagKey];
+            persistirConferenciaAtual(reg);
+        }
+
+        function marcarTodosFlags(valor) {
+            if (!appState.selectedPeriodoId || !appState.selectedComumId) return;
+            const reg = getRegistroConferencia(appState.selectedPeriodoId, appState.selectedComumId);
+            reg.membros = valor;
+            reg.alunos = valor;
+            reg.turmas = valor;
+            reg.aula = valor;
+            persistirConferenciaAtual(reg);
+            showToast('Todos os 4 itens marcados como OK!', 'success');
+        }
+
+        function limparConferenciaAtual() {
+            if (!appState.selectedPeriodoId || !appState.selectedComumId) return;
+            const key = `${appState.selectedPeriodoId}_${appState.selectedComumId}`;
+            delete appState.conferencias[key];
+            salvarDadosStorage();
+            renderizarTelaConferencia();
+            showToast('Conferência desta comum foi limpa.', 'info');
+        }
+
+        function autoSaveConferencia() {
+            if (!appState.selectedPeriodoId || !appState.selectedComumId) return;
+            const reg = getRegistroConferencia(appState.selectedPeriodoId, appState.selectedComumId);
+            persistirConferenciaAtual(reg);
+        }
+
+        function salvarConferenciaManual() {
+            if (!appState.selectedPeriodoId || !appState.selectedComumId) {
+                showToast('Selecione um período e uma comum antes de salvar.', 'error');
+                return;
+            }
+            const reg = getRegistroConferencia(appState.selectedPeriodoId, appState.selectedComumId);
+            persistirConferenciaAtual(reg);
+            
+            const comum = appState.comuns.find(c => c.id === appState.selectedComumId);
+            showToast(`Conferência de ${comum ? comum.nome : 'Comum'} salva com sucesso!`, 'success');
+        }
+
+        function persistirConferenciaAtual(reg) {
+            const key = `${appState.selectedPeriodoId}_${appState.selectedComumId}`;
+            const agora = new Date();
+            const dataFormatada = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            appState.conferencias[key] = {
+                membros: !!reg.membros,
+                alunos: !!reg.alunos,
+                turmas: !!reg.turmas,
+                aula: !!reg.aula,
+                conferenteId: document.getElementById('select-conferente').value || appState.secretarios[0]?.id || '',
+                obs: document.getElementById('input-observacoes').value.trim(),
+                updatedAt: dataFormatada
+            };
+
+            salvarDadosStorage();
+            
+            // Atualiza visual do select de comuns (ícones) e painel inferior sem perder foco
+            const selectComum = document.getElementById('select-comum');
+            Array.from(selectComum.options).forEach(opt => {
+                const r = getRegistroConferencia(appState.selectedPeriodoId, opt.value);
+                const c = appState.comuns.find(item => item.id === opt.value);
+                if (c) {
+                    const totalOk = [r.membros, r.alunos, r.turmas, r.aula].filter(Boolean).length;
+                    const indicador = totalOk === 4 ? '✅' : (totalOk > 0 ? '⚠️' : '⏳');
+                    opt.textContent = `${indicador} ${c.nome}`;
+                }
+            });
+
+            carregarFormularioAtual();
+            renderizarProgressoEPainelSemanal();
+        }
+
+        function renderizarProgressoEPainelSemanal() {
+            const totalComuns = appState.comuns.length;
+            let completas = 0;
+            let parciais = 0;
+            let pendentes = 0;
+
+            const tbody = document.getElementById('tabela-resumo-body');
+            const mobileContainer = document.getElementById('cards-resumo-mobile');
+
+            if (totalComuns === 0) {
+                document.getElementById('progresso-texto').textContent = '0 de 0 Comuns';
+                document.getElementById('progresso-barra').style.width = '0%';
+                tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400">Nenhuma Comum Congregação cadastrada. Acesse a aba Configuração.</td></tr>';
+                mobileContainer.innerHTML = '<div class="p-6 text-center text-sm text-slate-400">Nenhuma Comum Congregação cadastrada.</div>';
+                return;
+            }
+
+            let htmlDesktop = '';
+            let htmlMobile = '';
+
+            appState.comuns.forEach(comum => {
+                const reg = getRegistroConferencia(appState.selectedPeriodoId, comum.id);
+                const qtdOk = [reg.membros, reg.alunos, reg.turmas, reg.aula].filter(Boolean).length;
+
+                if (qtdOk === 4) completas++;
+                else if (qtdOk > 0) parciais++;
+                else pendentes++;
+
+                const conferente = appState.secretarios.find(s => s.id === reg.conferenteId);
+                const nomeConferente = conferente ? conferente.nome : '-';
+                const isSelected = comum.id === appState.selectedComumId;
+
+                const badgeIcon = (ok) => ok 
+                    ? `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs" title="OK">✓</span>`
+                    : `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 text-slate-400 font-bold text-xs" title="Pendente">—</span>`;
+
+                // Linha Desktop
+                htmlDesktop += `
+                    <tr class="hover:bg-slate-50/90 transition-colors ${isSelected ? 'bg-brand-50/40' : ''}">
+                        <td class="py-3.5 px-5">
+                            <div class="font-bold text-slate-800 flex items-center gap-2">
+                                <span>${comum.nome}</span>
+                                ${qtdOk === 4 ? '<span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full">100% OK</span>' : ''}
+                            </div>
+                            <div class="text-xs text-slate-500">Sec. GEM: ${comum.secretarioGem}</div>
+                        </td>
+                        <td class="py-3.5 px-3 text-center">${badgeIcon(reg.membros)}</td>
+                        <td class="py-3.5 px-3 text-center">${badgeIcon(reg.alunos)}</td>
+                        <td class="py-3.5 px-3 text-center">${badgeIcon(reg.turmas)}</td>
+                        <td class="py-3.5 px-3 text-center">${badgeIcon(reg.aula)}</td>
+                        <td class="py-3.5 px-4">
+                            <div class="text-xs font-medium text-slate-700">${reg.updatedAt ? nomeConferente : '<span class="text-slate-400 italic">Não conferido</span>'}</div>
+                            ${reg.obs ? `<div class="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded mt-1 inline-block border border-amber-200/70">${reg.obs}</div>` : ''}
+                        </td>
+                        <td class="py-3.5 px-5 text-right no-print">
+                            <button type="button" onclick="selecionarComumParaEdicao('${comum.id}')" class="text-xs font-semibold text-brand-700 hover:text-brand-900 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors">
+                                Conferir
+                            </button>
+                        </td>
+                    </tr>
+                `;
+
+                // Card Mobile
+                const pillMobile = (label, ok) => ok
+                    ? `<span class="px-2 py-1 rounded-md text-[11px] font-semibold bg-emerald-100 text-emerald-800">✓ ${label}</span>`
+                    : `<span class="px-2 py-1 rounded-md text-[11px] font-medium bg-slate-100 text-slate-500">○ ${label}</span>`;
+
+                htmlMobile += `
+                    <div class="p-4 space-y-3 ${isSelected ? 'bg-brand-50/40' : ''}">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">${comum.nome}</div>
+                                <div class="text-xs text-slate-500">Sec. GEM: ${comum.secretarioGem}</div>
+                            </div>
+                            <button type="button" onclick="selecionarComumParaEdicao('${comum.id}')" class="text-xs font-semibold text-brand-700 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-lg shrink-0">
+                                Conferir
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${pillMobile('Membros', reg.membros)}
+                            ${pillMobile('Alunos', reg.alunos)}
+                            ${pillMobile('Turmas', reg.turmas)}
+                            ${pillMobile('Aula Semanal', reg.aula)}
+                        </div>
+                        ${reg.obs ? `<div class="text-xs text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200">Obs: ${reg.obs}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            tbody.innerHTML = htmlDesktop;
+            mobileContainer.innerHTML = htmlMobile;
+
+            // Atualiza barra de progresso
+            const percentual = Math.round((completas / totalComuns) * 100);
+            document.getElementById('progresso-texto').textContent = `${completas} de ${totalComuns} Comuns 100% OK (${percentual}%)`;
+            document.getElementById('progresso-barra').style.width = `${percentual}%`;
+            document.getElementById('progresso-parcial').textContent = `${parciais} parcial(is)`;
+            document.getElementById('progresso-pendente').textContent = `${pendentes} pendente(s)`;
+        }
+
+        function selecionarComumParaEdicao(comumId) {
+            appState.selectedComumId = comumId;
+            document.getElementById('select-comum').value = comumId;
+            salvarDadosStorage();
+            carregarFormularioAtual();
+            renderizarProgressoEPainelSemanal();
+            
+            // Rola suavemente até o formulário
+            const formCard = document.getElementById('card-formulario-conferencia');
+            if (formCard) {
+                formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // =====================================================================
+        // TELA 2: CONFIGURAÇÃO (CRUD COMUNS, SECRETÁRIOS E DATAS)
+        // =====================================================================
+        function renderizarTelaConfiguracao() {
+            // Contadores nos botões
+            document.getElementById('count-badge-comuns').textContent = `${appState.comuns.length} cadastrada(s)`;
+            document.getElementById('count-badge-secretarios').textContent = `${appState.secretarios.length} cadastrado(s)`;
+            document.getElementById('count-badge-datas').textContent = `${appState.datas.length} período(s)`;
+
+            // 1. Renderizar Lista de Comuns
+            const tbodyComuns = document.getElementById('lista-comuns-body');
+            if (appState.comuns.length === 0) {
+                tbodyComuns.innerHTML = '<tr><td colspan="3" class="py-6 text-center text-slate-400">Nenhuma Comum cadastrada ainda.</td></tr>';
+            } else {
+                tbodyComuns.innerHTML = appState.comuns.map(c => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 font-semibold text-slate-800">${c.nome}</td>
+                        <td class="py-3 px-4 text-slate-600">${c.secretarioGem}</td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            <button type="button" onclick="editarComum('${c.id}')" class="text-xs font-semibold text-brand-600 hover:text-brand-800 px-2.5 py-1 rounded-lg hover:bg-brand-50">Editar</button>
+                            <button type="button" onclick="excluirComum('${c.id}')" class="text-xs font-semibold text-rose-600 hover:text-rose-800 px-2.5 py-1 rounded-lg hover:bg-rose-50">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // 2. Renderizar Lista de Secretários
+            const tbodySec = document.getElementById('lista-secretarios-body');
+            if (appState.secretarios.length === 0) {
+                tbodySec.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-slate-400">Nenhum Secretário Conferente cadastrado.</td></tr>';
+            } else {
+                tbodySec.innerHTML = appState.secretarios.map(s => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 font-semibold text-slate-800">${s.nome}</td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            <button type="button" onclick="editarSecretario('${s.id}')" class="text-xs font-semibold text-brand-600 hover:text-brand-800 px-2.5 py-1 rounded-lg hover:bg-brand-50">Editar</button>
+                            <button type="button" onclick="excluirSecretario('${s.id}')" class="text-xs font-semibold text-rose-600 hover:text-rose-800 px-2.5 py-1 rounded-lg hover:bg-rose-50">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // 3. Renderizar Lista de Datas de Análise
+            const tbodyDatas = document.getElementById('lista-datas-body');
+            const datasOrdenadas = [...appState.datas].sort((a, b) => b.dataISO.localeCompare(a.dataISO));
+            if (datasOrdenadas.length === 0) {
+                tbodyDatas.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400">Nenhuma data de análise cadastrada.</td></tr>';
+            } else {
+                tbodyDatas.innerHTML = datasOrdenadas.map(d => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 font-bold text-slate-800">${formatarDataBR(d.dataISO)}</td>
+                        <td class="py-3 px-4 text-slate-600">${d.descricao || '<span class="text-slate-400 italic">Sem descrição</span>'}</td>
+                        <td class="py-3 px-4">
+                            ${d.id === appState.selectedPeriodoId 
+                                ? '<span class="px-2.5 py-0.5 text-xs font-bold bg-brand-100 text-brand-800 rounded-full">Selecionada</span>' 
+                                : `<button type="button" onclick="definirPeriodoAtivo('${d.id}')" class="text-xs text-slate-500 hover:text-brand-600 underline">Usar na análise</button>`
+                            }
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button type="button" onclick="excluirDataAnalise('${d.id}')" class="text-xs font-semibold text-rose-600 hover:text-rose-800 px-2.5 py-1 rounded-lg hover:bg-rose-50">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // --- CRUD Comum Congregação ---
+        function salvarComum(event) {
+            event.preventDefault();
+            const idEdit = document.getElementById('edit-comum-id').value;
+            const nome = document.getElementById('input-comum-nome').value.trim();
+            const secretarioGem = document.getElementById('input-comum-sec-gem').value.trim();
+
+            if (!nome || !secretarioGem) return;
+
+            if (idEdit) {
+                const idx = appState.comuns.findIndex(c => c.id === idEdit);
+                if (idx !== -1) {
+                    appState.comuns[idx] = { id: idEdit, nome, secretarioGem };
+                    showToast('Comum Congregação atualizada!', 'success');
+                }
+            } else {
+                const nova = { id: gerarId('comum'), nome, secretarioGem };
+                appState.comuns.push(nova);
+                if (!appState.selectedComumId) appState.selectedComumId = nova.id;
+                showToast('Comum Congregação adicionada!', 'success');
+            }
+
+            cancelarEdicaoComum();
+            salvarDadosStorage();
+            renderizarTudo();
+        }
+
+        function editarComum(id) {
+            const comum = appState.comuns.find(c => c.id === id);
+            if (!comum) return;
+            document.getElementById('edit-comum-id').value = comum.id;
+            document.getElementById('input-comum-nome').value = comum.nome;
+            document.getElementById('input-comum-sec-gem').value = comum.secretarioGem;
+            document.getElementById('btn-submit-comum').textContent = 'Salvar Alteração';
+            document.getElementById('btn-cancel-comum').classList.remove('hidden');
+            document.getElementById('input-comum-nome').focus();
+        }
+
+        function cancelarEdicaoComum() {
+            document.getElementById('edit-comum-id').value = '';
+            document.getElementById('form-comum').reset();
+            document.getElementById('btn-submit-comum').textContent = 'Adicionar Comum';
+            document.getElementById('btn-cancel-comum').classList.add('hidden');
+        }
+
+        function excluirComum(id) {
+            abrirModalConfirmacao(
+                'Excluir Comum Congregação',
+                'Deseja realmente excluir esta Comum Congregação? Os registros vinculados a ela não aparecerão mais no painel.',
+                () => {
+                    appState.comuns = appState.comuns.filter(c => c.id !== id);
+                    salvarDadosStorage();
+                    renderizarTudo();
+                    showToast('Comum excluída.', 'info');
+                }
+            );
+        }
+
+        // --- CRUD Secretário Conferente ---
+        function salvarSecretario(event) {
+            event.preventDefault();
+            const idEdit = document.getElementById('edit-sec-id').value;
+            const nome = document.getElementById('input-sec-nome').value.trim();
+            if (!nome) return;
+
+            if (idEdit) {
+                const idx = appState.secretarios.findIndex(s => s.id === idEdit);
+                if (idx !== -1) {
+                    appState.secretarios[idx].nome = nome;
+                    showToast('Secretário atualizado!', 'success');
+                }
+            } else {
+                appState.secretarios.push({ id: gerarId('sec'), nome });
+                showToast('Secretário adicionado!', 'success');
+            }
+
+            cancelarEdicaoSecretario();
+            salvarDadosStorage();
+            renderizarTudo();
+        }
+
+        function editarSecretario(id) {
+            const sec = appState.secretarios.find(s => s.id === id);
+            if (!sec) return;
+            document.getElementById('edit-sec-id').value = sec.id;
+            document.getElementById('input-sec-nome').value = sec.nome;
+            document.getElementById('btn-submit-sec').textContent = 'Salvar';
+            document.getElementById('btn-cancel-sec').classList.remove('hidden');
+            document.getElementById('input-sec-nome').focus();
+        }
+
+        function cancelarEdicaoSecretario() {
+            document.getElementById('edit-sec-id').value = '';
+            document.getElementById('form-secretario').reset();
+            document.getElementById('btn-submit-sec').textContent = 'Adicionar Secretário';
+            document.getElementById('btn-cancel-sec').classList.add('hidden');
+        }
+
+        function excluirSecretario(id) {
+            abrirModalConfirmacao(
+                'Excluir Secretário',
+                'Deseja remover este Secretário da lista de conferentes?',
+                () => {
+                    appState.secretarios = appState.secretarios.filter(s => s.id !== id);
+                    salvarDadosStorage();
+                    renderizarTudo();
+                    showToast('Secretário removido.', 'info');
+                }
+            );
+        }
+
+        // --- CRUD Datas de Análise ---
+        function salvarDataAnalise(event) {
+            event.preventDefault();
+            const dataISO = document.getElementById('input-data-valor').value;
+            const descricao = document.getElementById('input-data-desc').value.trim();
+
+            if (!dataISO) return;
+
+            // Evita duplicidade exata da mesma data
+            const jaExiste = appState.datas.some(d => d.dataISO === dataISO);
+            if (jaExiste) {
+                showToast('Esta data de análise já está cadastrada!', 'error');
+                return;
+            }
+
+            const novaData = {
+                id: gerarId('data'),
+                dataISO,
+                descricao,
+                ativa: true
+            };
+
+            appState.datas.push(novaData);
+            appState.selectedPeriodoId = novaData.id; // Já seleciona automaticamente a nova data
+            
+            document.getElementById('input-data-desc').value = '';
+            salvarDadosStorage();
+            renderizarTudo();
+            showToast(`Período ${formatarDataBR(dataISO)} adicionado e selecionado!`, 'success');
+        }
+
+        function definirPeriodoAtivo(id) {
+            appState.selectedPeriodoId = id;
+            salvarDadosStorage();
+            renderizarTudo();
+            showToast('Período de análise alterado.', 'info');
+        }
+
+        function excluirDataAnalise(id) {
+            abrirModalConfirmacao(
+                'Excluir Data de Análise',
+                'Deseja excluir este período semanal? As conferências feitas nesta data deixarão de ser exibidas.',
+                () => {
+                    appState.datas = appState.datas.filter(d => d.id !== id);
+                    salvarDadosStorage();
+                    renderizarTudo();
+                    showToast('Data de análise excluída.', 'info');
+                }
+            );
+        }
+
+        // =====================================================================
+        // EXPORTAÇÕES (WHATSAPP, EXCEL, BACKUP JSON)
+        // =====================================================================
+        function copiarResumoWhatsApp() {
+            const periodo = appState.datas.find(d => d.id === appState.selectedPeriodoId);
+            if (!periodo || appState.comuns.length === 0) {
+                showToast('Não há dados suficientes para gerar o resumo.', 'error');
+                return;
+            }
+
+            const dataFmt = formatarDataBR(periodo.dataISO);
+            let texto = `*CONFERÊNCIA SEMANAL SAM - CCB*\n`;
+            texto += `📅 *Período:* Semana de ${dataFmt}${periodo.descricao ? ` (${periodo.descricao})` : ''}\n`;
+            texto += `--------------------------------------\n\n`;
+
+            let okTotal = 0;
+
+            appState.comuns.forEach(comum => {
+                const reg = getRegistroConferencia(periodo.id, comum.id);
+                const itensOk = [reg.membros, reg.alunos, reg.turmas, reg.aula].filter(Boolean).length;
+                if (itensOk === 4) okTotal++;
+
+                const statusEmoji = itensOk === 4 ? '✅' : (itensOk > 0 ? '⚠️' : '⏳');
+                texto += `${statusEmoji} *${comum.nome}* (Sec. GEM: ${comum.secretarioGem})\n`;
+                texto += `   ${reg.membros ? '☑️' : '⬜'} Membros | ${reg.alunos ? '☑️' : '⬜'} Alunos | ${reg.turmas ? '☑️' : '⬜'} Turmas | ${reg.aula ? '☑️' : '⬜'} Aula Semanal\n`;
+                if (reg.obs) {
+                    texto += `   📝 _Obs: ${reg.obs}_\n`;
+                }
+                texto += `\n`;
+            });
+
+            texto += `--------------------------------------\n`;
+            texto += `📊 *Resumo:* ${okTotal} de ${appState.comuns.length} comuns 100% lançadas.`;
+
+            // Copia para área de transferência usando textarea fallback seguro para iframes
+            const textArea = document.createElement('textarea');
+            textArea.value = texto;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Resumo formatado copiado! Cole no WhatsApp.', 'success');
+            } catch (err) {
+                showToast('Não foi possível copiar automaticamente.', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function exportarExcelSemana() {
+            const periodo = appState.datas.find(d => d.id === appState.selectedPeriodoId);
+            if (!periodo || appState.comuns.length === 0) {
+                showToast('Sem dados para exportar.', 'error');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                showToast('Biblioteca Excel indisponível offline.', 'error');
+                return;
+            }
+
+            const linhas = appState.comuns.map(comum => {
+                const reg = getRegistroConferencia(periodo.id, comum.id);
+                const conf = appState.secretarios.find(s => s.id === reg.conferenteId);
+                return {
+                    'Período de Análise': formatarDataBR(periodo.dataISO),
+                    'Comum Congregação': comum.nome,
+                    'Secretário do GEM': comum.secretarioGem,
+                    'Cadastro de Membros': reg.membros ? 'OK' : 'PENDENTE',
+                    'Cadastro de Alunos': reg.alunos ? 'OK' : 'PENDENTE',
+                    'Cadastro de Turmas': reg.turmas ? 'OK' : 'PENDENTE',
+                    'Aula da Semana': reg.aula ? 'OK' : 'PENDENTE',
+                    'Secretário Conferente': reg.updatedAt && conf ? conf.nome : 'Não conferido',
+                    'Data/Hora Conferência': reg.updatedAt || '',
+                    'Observações': reg.obs || ''
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(linhas);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Conferência SAM');
+            XLSX.writeFile(wb, `Conferencia_SAM_${periodo.dataISO}.xlsx`);
+            showToast('Planilha Excel gerada com sucesso!', 'success');
+        }
+
+        function exportarRelatorioGeralExcel() {
+            if (typeof XLSX === 'undefined') {
+                showToast('Biblioteca Excel indisponível.', 'error');
+                return;
+            }
+
+            const linhas = [];
+            const datasOrdenadas = [...appState.datas].sort((a, b) => b.dataISO.localeCompare(a.dataISO));
+
+            datasOrdenadas.forEach(periodo => {
+                appState.comuns.forEach(comum => {
+                    const reg = getRegistroConferencia(periodo.id, comum.id);
+                    const conf = appState.secretarios.find(s => s.id === reg.conferenteId);
+                    linhas.push({
+                        'Data Análise': formatarDataBR(periodo.dataISO),
+                        'Referência': periodo.descricao || '',
+                        'Comum Congregação': comum.nome,
+                        'Secretário GEM': comum.secretarioGem,
+                        'Membros': reg.membros ? 'OK' : 'PENDENTE',
+                        'Alunos': reg.alunos ? 'OK' : 'PENDENTE',
+                        'Turmas': reg.turmas ? 'OK' : 'PENDENTE',
+                        'Aula Semanal': reg.aula ? 'OK' : 'PENDENTE',
+                        'Conferente': reg.updatedAt && conf ? conf.nome : '-',
+                        'Observações': reg.obs || ''
+                    });
+                });
+            });
+
+            if (linhas.length === 0) {
+                showToast('Nenhum dado cadastrado para exportar.', 'error');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(linhas);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Histórico SAM');
+            XLSX.writeFile(wb, `Historico_Completo_SAM_${new Date().toISOString().split('T')[0]}.xlsx`);
+            showToast('Relatório histórico exportado!', 'success');
+        }
+
+        function exportarBackupJSON() {
+            const dataStr = JSON.stringify(appState, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Backup_Controle_SAM_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Arquivo de backup (.json) baixado!', 'success');
+        }
+
+        function importarBackupJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && Array.isArray(imported.comuns) && Array.isArray(imported.datas)) {
+                        appState = {
+                            comuns: imported.comuns || [],
+                            secretarios: imported.secretarios || [],
+                            datas: imported.datas || [],
+                            conferencias: imported.conferencias || {},
+                            selectedPeriodoId: imported.selectedPeriodoId || '',
+                            selectedComumId: imported.selectedComumId || ''
+                        };
+                        salvarDadosStorage();
+                        renderizarTudo();
+                        showToast('Backup restaurado com sucesso!', 'success');
+                    } else {
+                        showToast('Arquivo JSON inválido ou incompatível.', 'error');
+                    }
+                } catch (err) {
+                    showToast('Erro ao ler o arquivo de backup.', 'error');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function pedirConfirmacaoReset() {
+            abrirModalConfirmacao(
+                'Restaurar Dados de Exemplo',
+                'Isso substituirá os dados atuais pelos dados iniciais de exemplo. Deseja continuar?',
+                () => {
+                    appState = getDefaultSeedData();
+                    salvarDadosStorage();
+                    renderizarTudo();
+                    showToast('Dados de exemplo restaurados!', 'info');
+                }
+            );
+        }
+
+        // =====================================================================
+        // UTILITÁRIOS DE UI (MODAL CUSTOMIZADO E TOAST)
+        // =====================================================================
+        let modalCallback = null;
+
+        function abrirModalConfirmacao(titulo, mensagem, onConfirm) {
+            document.getElementById('modal-title').textContent = titulo;
+            document.getElementById('modal-message').textContent = mensagem;
+            modalCallback = onConfirm;
+            
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            document.getElementById('modal-confirm-btn').onclick = () => {
+                if (modalCallback) modalCallback();
+                fecharModal();
+            };
+        }
+
+        function fecharModal() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            modalCallback = null;
+        }
+
+        function showToast(mensagem, tipo = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let cores = 'bg-slate-800 text-white';
+            if (tipo === 'success') cores = 'bg-emerald-700 text-white';
+            if (tipo === 'error') cores = 'bg-rose-600 text-white';
+            if (tipo === 'info') cores = 'bg-brand-700 text-white';
+
+            toast.className = `toast-enter px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2 ${cores}`;
+            toast.textContent = mensagem;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
