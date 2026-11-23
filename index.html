@@ -16,9 +16,10 @@
     <!-- SheetJS para exportação Excel (.xlsx) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <!-- Firebase App & Firestore (SDKs Oficiais v10 Compat) -->
+    <!-- Firebase App, Firestore & Analytics (SDKs Oficiais v10 Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
 
     <script>
         tailwind.config = {
@@ -630,19 +631,19 @@ service cloud.firestore {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">API Key (apiKey)</label>
-                            <input type="text" id="fb-apiKey" placeholder="AIzaSy..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-brand-500">
+                            <input type="text" id="fb-apiKey" value="AIzaSyB6JjGWV_n-m3NQ6I4SHNQmG7uZiN40cYE" placeholder="AIzaSy..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-brand-500">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Project ID (projectId)</label>
-                            <input type="text" id="fb-projectId" placeholder="ex: secretaria-gem-ccb" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-brand-500">
+                            <input type="text" id="fb-projectId" value="secretaria-gem" placeholder="ex: secretaria-gem" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-brand-500">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Auth Domain (authDomain)</label>
-                            <input type="text" id="fb-authDomain" placeholder="ex: seu-projeto.firebaseapp.com" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-brand-500">
+                            <input type="text" id="fb-authDomain" value="secretaria-gem.firebaseapp.com" placeholder="ex: seu-projeto.firebaseapp.com" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-brand-500">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">App ID (appId)</label>
-                            <input type="text" id="fb-appId" placeholder="ex: 1:123456789:web:abcdef" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-brand-500">
+                            <input type="text" id="fb-appId" value="1:358010492856:web:328c01d55d3fda151e614d" placeholder="ex: 1:123456789:web:abcdef" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-brand-500">
                         </div>
                     </div>
 
@@ -757,9 +758,21 @@ service cloud.firestore {
         const STORAGE_KEY = 'ccb_sam_conferencia_v1';
         const FIREBASE_CONFIG_KEY = 'ccb_sam_firebase_config_v1';
 
+        // Configuração Padrão do Firebase (Base de Dados Oficial Secretaria-GEM)
+        const DEFAULT_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyB6JjGWV_n-m3NQ6I4SHNQmG7uZiN40cYE",
+            authDomain: "secretaria-gem.firebaseapp.com",
+            projectId: "secretaria-gem",
+            storageBucket: "secretaria-gem.firebasestorage.app",
+            messagingSenderId: "358010492856",
+            appId: "1:358010492856:web:328c01d55d3fda151e614d",
+            measurementId: "G-TJSZDF32WT"
+        };
+
         // Instâncias Firebase
         let firebaseAppInstance = null;
         let firestoreDb = null;
+        let firebaseAnalytics = null;
         let firestoreUnsubscribe = null;
         let isFirebaseConnected = false;
         let isSyncingFromCloud = false;
@@ -896,18 +909,23 @@ service cloud.firestore {
         // INTEGRAÇÃO FIREBASE FIRESTORE
         // =====================================================================
         function inicializarFirebaseSalvo() {
+            let config = null;
             const configRaw = localStorage.getItem(FIREBASE_CONFIG_KEY);
             if (configRaw) {
                 try {
-                    const config = JSON.parse(configRaw);
-                    preencherInputsFirebaseConfig(config);
-                    conectarAoFirebase(config, false);
+                    config = JSON.parse(configRaw);
                 } catch (e) {
                     console.error('Erro ao carregar credenciais do Firebase:', e);
                 }
-            } else {
-                atualizarUIStatusFirebase(false, 'Local');
             }
+
+            // Se não houver configuração salva ou se faltar chave, usa a oficial fornecida
+            if (!config || !config.apiKey) {
+                config = DEFAULT_FIREBASE_CONFIG;
+            }
+
+            preencherInputsFirebaseConfig(config);
+            conectarAoFirebase(config, false);
         }
 
         function preencherInputsFirebaseConfig(config) {
@@ -943,6 +961,15 @@ service cloud.firestore {
             try {
                 firebaseAppInstance = firebase.initializeApp(config);
                 firestoreDb = firebase.firestore();
+
+                // Inicializa Firebase Analytics se suportado
+                if (config.measurementId && typeof firebase.analytics === 'function') {
+                    try {
+                        firebaseAnalytics = firebase.analytics();
+                    } catch (e) {
+                        console.log('Firebase Analytics info:', e);
+                    }
+                }
 
                 // Salva config no storage
                 localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(config));
@@ -984,16 +1011,20 @@ service cloud.firestore {
                         isSyncingFromCloud = false;
                     }
                 } else {
-                    // Documento ainda não existe na nuvem - oferece upload
+                    // Documento ainda não existe no Firestore recém-criado:
+                    // Inicializa automaticamente com os dados atuais da aplicação!
+                    salvarDadosNoFirestore();
                     if (notificar) {
-                        showToast('Conectado ao Firestore! O banco está vazio. Clique em "Subir dados locais" para enviar os cadastros.', 'info');
+                        showToast('Banco Firestore inicializado com os dados do sistema!', 'success');
                     }
                 }
             }, (error) => {
                 console.error('Erro no Snapshot do Firestore:', error);
                 isFirebaseConnected = false;
-                atualizarUIStatusFirebase(false, 'Erro Permissão');
-                showToast('Erro no Firestore: Verifique as regras de segurança e conectividade.', 'error');
+                atualizarUIStatusFirebase(false, 'Aguardando Regra');
+                if (notificar) {
+                    showToast('Erro no Firestore: Verifique se as regras foram publicadas no Firebase Console.', 'error');
+                }
             });
 
             if (notificar) {

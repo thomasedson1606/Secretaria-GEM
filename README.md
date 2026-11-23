@@ -45,11 +45,8 @@ service cloud.firestore {
 }
 ```
 
-### Como Conectar à Nuvem
-1. No menu superior da aplicação, acesse a aba **Configuração** > **Nuvem & Firebase** (ou clique no badge de status do Firebase no topo).
-2. Cole as credenciais do seu projeto Firebase obtidas em *Project Settings* > *General* > *Web Apps* no Console do Firebase (`apiKey`, `projectId`, `authDomain`, `appId`).
-3. Clique em **Salvar & Conectar ao Firebase**.
-4. Use o botão **Subir dados locais para a Nuvem** para sincronizar seus cadastros existentes.
+### Conexão Automática
+A aplicação já vem pré-configurada de fábrica para a base oficial **`secretaria-gem`**. Ao abrir a página, a conexão com o Firestore é estabelecida automaticamente sem necessidade de preenchimento manual. Caso necessite alterar, as credenciais podem ser gerenciadas na aba **Configuração** > **Nuvem & Firebase**.
 
 ---
 
